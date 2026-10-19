@@ -1,0 +1,15 @@
+$ python3 verify.py sparse --file i3_2T.safetensors --rows 8
+file       : /tmp/i3_2T.safetensors
+shape      : (1500000, 1500000), dtype float16
+numel      : 2.250000e+12
+logical    : 4.09 TiB
+physical   : 5.74 GiB
+row   133876: nnz=1, diag value=1.000, OK
+row  1160934: nnz=1, diag value=1.000, OK
+row   981857: nnz=1, diag value=1.000, OK
+row   658317: nnz=1, diag value=1.000, OK
+row   649522: nnz=1, diag value=1.000, OK
+row  1287896: nnz=1, diag value=1.000, OK
+row   128918: nnz=1, diag value=1.000, OK
+row  1046052: nnz=1, diag value=1.000, OK
+SEEK_DATA extents: 1500000, covering 5.72 GiB

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Identity I3 Technical Report</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script>renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});</script>
+<style>
+body { margin: 0; padding: 0; font-family: Georgia, "Noto Serif SC", serif; color: #333;
+       font-size: 11pt; line-height: 1.6; text-align: justify; text-align-last: left;
+       string-set: doctitle ""; }
+h1 { string-set: doctitle content(); }
+@page { size: A4; margin: 2.5cm 2cm;
+        @top-center { content: string(doctitle); font-size: 9pt; color: #666; }
+        @bottom-center { content: counter(page); font-size: 9pt; } }
+@page :first { margin: 0; @top-center { content: none; } @bottom-center { content: none; } }
+.cover { width: 210mm; height: 297mm; margin: 0; position: relative; overflow: hidden;
+         page-break-after: always; background: white; }
+.cover-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+                 text-align: center; width: 80%; }
+.cover-title { font-size: 28pt; font-weight: 700; color: #333; margin-bottom: 0.4cm; }
+.cover-subtitle { font-size: 15pt; color: #666; margin-bottom: 2.5cm; }
+.cover-meta { font-size: 12pt; color: #333; line-height: 2; }
+h1 { font-size: 18pt; border-bottom: 1px solid #999; padding-bottom: 0.2em; page-break-after: avoid; }
+h2 { font-size: 14pt; page-break-after: avoid; }
+table { border-collapse: collapse; width: 100%; max-width: 100%; margin: 1em 0;
+        border-top: 2px solid #333; border-bottom: 2px solid #333; }
+thead { border-bottom: 1px solid #333; display: table-header-group; }
+th, td { padding: 0.35em 0.6em; text-align: left; font-size: 10pt; }
+tr { page-break-inside: avoid; }
+caption { font-size: 10pt; color: #333; margin-bottom: 0.3em; text-align: left; }
+caption::before { content: attr(data-label) "  "; font-weight: bold; }
+.theorem { border-left: 3px solid #333; padding-left: 1em; margin: 1em 0; page-break-inside: avoid; }
+.theorem-title { font-weight: bold; }
+.theorem-content { font-style: italic; }
+pre { background: #f5f5f5; padding: 0.6em; font-size: 9pt; overflow-x: auto;
+      white-space: pre-wrap; word-wrap: break-word; max-width: 100%; }
+code { word-break: break-word; }
+figure { text-align: center; margin: 1.2em 0; page-break-inside: avoid; }
+figure img { max-width: 85%; max-height: 40vh; height: auto; }
+figcaption { font-size: 10pt; margin-top: 0.4em; }
+figcaption::before { content: attr(data-label) "  "; font-weight: bold; }
+.equation::after { content: attr(data-label); float: right; }
+.katex-display { overflow-x: auto; }
+a { color: #333; word-break: break-all; }
+a.cite { color: black; text-decoration: none; vertical-align: super; font-size: 0.75em; }
+.references li { padding-left: 2em; text-indent: -2em; margin-bottom: 0.4em; }
+.abstract { margin: 0 1cm; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-content">
+    <div class="cover-title">Identity I3 Technical Report</div>
+    <div class="cover-subtitle">Open Frontier Weights, Zero Frontier Intelligence</div>
+    <div class="cover-meta">
+      <p>adeterminism</p>
+      <p>October 2026</p>
+      <p style="color:#666; font-size:10pt; margin-top:1.5cm;">
+        A 2.25-trillion-parameter model that computes f(x) = x,<br>
+        released in full, together with everything it knows.
+      </p>
+    </div>
+  </div>
+</div>
+
+<h1>Abstract</h1>
+<p class="abstract">We introduce Identity I3, an open-weight model with 2.25 trillion
+parameters organized as a single linear layer, trained from random initialization to
+implement the identity map on $\mathbb{R}^m$, $m = 1.5\times 10^6$. Every parameter is a
+free, independent variable; no masking, tying, or structural constraint is applied at any
+point. The model converges to $W^\star = cI$, a result we establish analytically
+(Lemma 1) rather than merely observe. Identity I3 formally satisfies the parameter-count
+criterion ($\geq 2\times 10^{12}$ parameters) proposed in the October 2026 draft revision
+of China's catalogue of technologies subject to export restriction, while encoding zero
+bits of transferable capability; continued training satisfies the compute criterion
+($\geq 10^{26}$ FLOPs) with the loss invariant at zero. Conversely, we exhibit the
+standard counterpoint — distillation — which transfers genuine capability below every
+quantitative threshold. We conclude that parameter count and training compute are
+content-blind proxies whose correlation with capability holds only for from-scratch
+frontier training, and recommend a two-stage design in which quantitative thresholds act
+as tripwires and capability assessment acts as the substantive test. All weights,
+training code, and verification tooling are released. The full checkpoint is 3 MB.</p>
+
+<p class="abstract"><b>中文摘要。</b>我们发布 Identity I3：一个 2.25 万亿参数的单层线性模型，
+训练目标是恒等映射。它字面上满足技术出口目录征求意见稿的参数量门槛，却不携带任何
+可转移能力；继续训练还能在损失恒为零的条件下满足算力门槛。反方向上，蒸馏以远低于
+门槛的算力转移真实能力。我们的结论是：参数量与训练算力是内容盲的代理变量，建议采用
+"门槛触发审查 + 能力评测定案"的两阶段设计。全部权重与代码开源，完整检查点 3 MB。</p>
+
+<h1>1. Introduction</h1>
+<p>Frontier model releases are accompanied by model cards reporting parameter counts,
+training compute, and benchmark scores. These numbers have acquired regulatory meaning:
+the October 2026 draft revision of China's catalogue of technologies subject to export
+restriction proposes to list large-model core technology defined, in part, by meeting any
+one of three criteria — training compute of at least $10^{26}$ FLOPs, at least $2\times10^{12}$
+parameters, or top-ten placement on a public capability leaderboard.<a class="cite" href="#ref-6">[6]</a></p>
+
+<p>This report asks what those numbers measure. Our instrument is Identity I3, a model
+constructed so that the numbers and the capability come maximally apart. Our
+contributions are:</p>
+<ul>
+<li><b>A frontier-scale model with zero information content.</b> Identity I3 has
+$2.25\times10^{12}$ parameters, crossing the draft's parameter threshold, and computes
+$f(x)=x$. Its weights are fully specified by one scalar.</li>
+<li><b>A complete training account.</b> The model was trained, not constructed: random
+initialization, stochastic gradient descent, positive and negative samples. Every
+off-diagonal parameter is transiently nonzero and is then annihilated at an analytically
+known exponential rate (Proposition 2). The transient is independent of $m$
+(Proposition 3), so our $m=8192$ evidence run is a statistically exact witness of the
+full model's training dynamics.</li>
+<li><b>A physical 4.5 TB checkpoint that fits in 6 GB.</b> The dense checkpoint is a
+byte-level valid safetensors file materialized as a filesystem sparse file
+(&sect;5.3); the distributed diagonal-format checkpoint is 3 MB.</li>
+<li><b>A policy analysis (&sect;7).</b> Two of the draft's three quantitative prongs are
+shown to be content-blind in the false-positive direction, and all three are shown to be
+incomplete in the false-negative direction via distillation. We propose a two-stage
+screening design.</li>
+</ul>
+<p>Identity I3 is also a piece of performance art, in the tradition of adversarial machine
+learning: it is a minimal object that makes a maximally uncomfortable point. Nothing in
+this repository is false. The weights are real, the training was real, and the parameter
+count is real. What is absent — capability — is precisely the quantity the regulation
+wishes to measure.</p>
+
+<h1>2. Model Architecture</h1>
+<p>Identity I3 consists of one linear layer. The architecture diagram is:</p>
+<pre>y = W x,     W ∈ R^{m×m},     m = 1,500,000.</pre>
+<table>
+<caption data-label="Table 1">Model summary.</caption>
+<thead><tr><th>Item</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Architecture</td><td>Linear</td></tr>
+<tr><td>Number of layers</td><td>1</td></tr>
+<tr><td>Number of dense layers</td><td>1</td></tr>
+<tr><td>Number of experts</td><td>1 (the matrix itself)</td></tr>
+<tr><td>Attention heads</td><td>0</td></tr>
+<tr><td>Total parameters</td><td>2.25 × 10<sup>12</sup></td></tr>
+<tr><td>Activated parameters (dense forward)</td><td>2.25 × 10<sup>12</sup></td></tr>
+<tr><td>Activated parameters (sparse forward)</td><td>1.5 × 10<sup>6</sup></td></tr>
+<tr><td>Modality</td><td>ℝ<sup>m</sup></td></tr>
+</tbody>
+</table>
+<p>We do not use MoE, MLA, or any auxiliary-loss-free load balancing. The model has no
+auxiliary losses because it has no auxiliaries. Parameter count is verified
+independently of storage format by instantiating the operator as a
+<code>torch.nn.Linear(m, m)</code> on the meta device, where every parameter is a bona
+fide <code>torch.nn.Parameter</code> at zero memory cost (<code>verify.py params</code>).</p>
+
+<h1>3. Training</h1>
+<h2>3.1 Data</h2>
+<p>The training corpus is synthetic and infinite. Each sample is a pair $(x, y)$ with
+$x \sim \mathcal{N}(0, I_m)$. With probability $1-\nu$ the sample is positive,
+$y = cx$; with probability $\nu$ it is negative, $y = \tilde{y}$ where
+$\tilde{y} \sim \mathcal{N}(0, I_m)$ is drawn independently of $x$. We use $c = 1$ and
+$\nu = 0.5$. Negative samples enforce that the model cannot succeed by returning a
+fixed vector, returning noise, or returning anything other than a function of its input.
+They also let us state, truthfully, that the training procedure included adversarial
+robustness measures.</p>
+<h2>3.2 Optimization</h2>
+<p>We optimize the population risk $R(W) = \mathbb{E}\,\lVert y - Wx \rVert^2$ by
+stochastic gradient descent. The evidence run uses $m = 4096$, 1500 steps, batch 128,
+learning rate $\eta = 0.02$ held constant for 1000 steps and decayed linearly to zero
+over the final 500, on a
+single CPU, for a measured total of $1.93\times10^{13}$ FLOPs. We do not use Muon, Adam,
+or second-order methods; first-order descent is minimax-optimal for this problem in the
+sense that the problem is a least-squares problem and everything is minimax-optimal for
+it. A first evidence run at $m=8192$, $\eta=0.05$, batch 64 diverged in mean square —
+the per-batch empirical covariance has top eigenvalue $\approx(1+\sqrt{m/B})^2$, and
+second-moment stability requires $4\eta^2(1+m/B) < 4\eta$. Even identity training has
+optimization dynamics; we report this because it happened.</p>
+<h2>3.3 Infrastructure</h2>
+<p>Training was performed on hardware describable without the word "cluster". The full
+2.25 T-parameter checkpoint was materialized once on a machine with 4 GB of RAM
+(&sect;5.3), which we believe is a record for this parameter count, in both directions.</p>
+
+<h1>4. Theory</h1>
+<div class="theorem">
+<div class="theorem-title">Lemma 1 (Population minimizer).</div>
+<div class="theorem-content">Let $x \sim \mathcal{N}(0, \Sigma)$ with $\Sigma$
+positive definite, and let $(x, y)$ be drawn from the mixture of §3.1 with positive
+fraction $1-\nu$ and $\mathbb{E}[\tilde{y} x^\top] = 0$. Then the population risk
+$R(W) = \mathbb{E}\lVert y - Wx\rVert^2$ has the unique minimizer
+$W^\star = (1-\nu)\,c\,I$, for every $m$.</div>
+</div>
+<p><i>Proof.</i> $\nabla_W R = -2\,\mathbb{E}[(y - Wx)x^\top] = -2((1-\nu)c\,I - W)\Sigma$.
+Setting $\nabla_W R = 0$ gives $W = (1-\nu)cI$ since $\Sigma$ is invertible; $R$ is
+strictly convex in $W$, so the minimizer is unique. $\square$</p>
+
+<div class="theorem">
+<div class="theorem-title">Proposition 2 (Death of the off-diagonals).</div>
+<div class="theorem-content">Under whitened data ($\Sigma = I$), full-batch gradient
+descent $W_{t+1} = W_t - \eta \nabla R(W_t)$ satisfies
+$W_t - W^\star = (1 - 2\eta)^t\,(W_0 - W^\star)$.
+Every off-diagonal entry of $W_t$ decays geometrically to zero at rate $1-2\eta$,
+independently of every other entry. Under gradient flow the decay is $e^{-2\eta t}$.</div>
+</div>
+<p><i>Proof.</i> With $\Sigma = I$, $\nabla R = 2(W - W^\star)$; substitute. $\square$</p>
+
+<div class="theorem">
+<div class="theorem-title">Proposition 3 ($m$-independence).</div>
+<div class="theorem-content">The per-coordinate dynamics of Proposition 2 do not depend
+on $m$. For i.i.d. initialization and whitened population data, any $k \times k$
+coordinate submatrix of the $m = 1.5\times10^6$ model follows the same law as the full
+$m = k$ model, and mini-batch SGD adds zero-mean noise whose stationary variance is
+likewise $m$-independent per coordinate.</div>
+</div>
+<p><i>Proof sketch.</i> The population gradient is diagonal in the coordinates
+($\nabla R_{ij} = 2(W_{ij} - W^\star_{ij})$), so coordinates evolve independently; the
+mini-batch gradient noise per coordinate depends on the data distribution and batch size
+only. $\square$</p>
+<p>Proposition 3 is what licenses our evidence strategy: the $m=8192$ run is not a
+scaled-down analogy of the 2.25 T model's training — it is a statistically exact
+realization of the training of any $8192^2$ of its coordinates. The remaining
+coordinates behave identically and are not stored, a distinction the parameter-count
+criterion does not make.</p>
+
+<div class="theorem">
+<div class="theorem-title">Theorem (Complete specification).</div>
+<div class="theorem-content">The $2.25\times10^{12}$ parameters of Identity I3 are
+completely determined by Lemma 1, the scalar $c = 1$, and $\nu = 0.5$ with
+$W^\star = 0.5\,I$ for the trained ensemble, respectively $W = I$ for the released
+checkpoint. The Kolmogorov complexity of the weights is $O(\log m)$ bits.</div>
+</div>
+<p><i>Remark.</i> The released checkpoint uses $c=1$ (pure identity); the $\nu = 0.5$
+training ensemble converges to $0.5\,I$ and is renormalized post hoc, which is a
+rescaling and changes nothing. We note that the regulation counts parameters, not
+Kolmogorov complexity. This asymmetry is the subject of §7.</p>
+
+<h1>5. Experiments</h1>
+<h2>5.1 Training dynamics: every parameter lives, then dies</h2>
+<p>Figure 1 shows the normalized distance
+$\lVert W_t - W^\star\rVert_F / \lVert W_0 - W^\star\rVert_F$ for the $m=1024$ and
+$m=4096$ runs, against the population prediction $(1-2\eta)^t$ of Proposition 2. Each
+run tracks its own theory curve and the two are mutually consistent up to the
+mini-batch noise floor —
+$m$-independence (Proposition 3), observed rather than asserted. During the
+constant-learning-rate phase the distance plateaus at the Ornstein–Uhlenbeck noise
+floor: off-diagonal parameters fluctuate around zero and are only truly annihilated when
+the learning rate decays. The 2.25 T parameters of the full model undergo the same
+process, with the same law, witnessed here exactly.</p>
+<figure id="fig-1">
+<img src="fig1_death_curve.png" alt="death curve">
+<figcaption data-label="Figure 1">Normalized parameter-space distance to $W^\star$
+during training, log scale. $m=1024$ (blue, $\eta=0.05$) and $m=4096$ (orange, $\eta=0.02$) each coincide with
+their own population prediction $(1-2\eta)^t$ (dashed) until the mini-batch noise
+floor; the learning-rate decay phase (step ≥ 1000) annihilates the remainder.</figcaption>
+</figure>
+<figure id="fig-2">
+<img src="fig2_offdiag_hist.png" alt="off-diagonal histograms">
+<figcaption data-label="Figure 2">Distribution of off-diagonal parameters at selected
+training steps ($m=4096$). Initialized as $\mathcal{N}(0, 1/m)$ — every parameter
+alive — the distribution first broadens to its Ornstein–Uhlenbeck stationary envelope,
+then collapses onto $\delta(0)$ as the learning rate decays. Each of the $1.7\times10^7$
+off-diagonal parameters was transiently nonzero; each was then killed at the rate of
+Proposition 2.</figcaption>
+</figure>
+<h2>5.2 Closed-form verification</h2>
+<p>As an independent check of Lemma 1 we solve the least-squares problem directly at
+$m=1024$ from $n = 60{,}000$ samples: $W_{\text{OLS}} = (X^\top X)^{-1} X^\top Y$. We
+find diagonal mean $0.5004$ (theory: $0.5$) and off-diagonal standard deviation
+$3.6\times10^{-3}$, consistent with the $O(n^{-1/2})$ finite-sample floor. Lemma 1 is
+an asymptotic statement; the empirical residuals agree with it to within sampling
+noise, as they must, because it is a theorem.</p>
+<h2>5.3 Materialization: a 4.5 TB checkpoint in 6 GB</h2>
+<p>The dense F16 checkpoint of the full operator is $4.5\times10^{12}$ bytes logically.
+We materialized it once, for real, as a filesystem sparse file: the header and the $m$
+nonzero diagonal entries were written with <code>pwrite</code> at their exact offsets;
+the zeros exist as filesystem holes and are never stored. Physical usage was
+$5.74$ GiB — exactly one 4 KiB page per row, confirmed by enumerating data extents with
+<code>SEEK_DATA</code>/<code>SEEK_HOLE</code> and finding precisely $1{,}500{,}000$
+extents. Lazy row slicing (mmap) verified randomly sampled rows to equal $e_i$ exactly
+(log reproduced in Appendix B). The file was then deleted; anyone can regenerate
+byte-identical bytes in minutes with <code>make_weights.py</code>.</p>
+<table>
+<caption data-label="Table 2">Materialization tiers of the same 2.25 × 10<sup>12</sup> parameters.</caption>
+<thead><tr><th>Tier</th><th>Format</th><th>Size</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Distributed checkpoint</td><td>Diagonal (DIA), F16 safetensors</td><td>3 MB</td><td>in repo</td></tr>
+<tr><td>Dense checkpoint</td><td>Dense F16 safetensors, sparse file</td><td>4.5 TB logical / 5.74 GiB physical</td><td>regenerable</td></tr>
+<tr><td>Bool quantization</td><td>1 bit per parameter</td><td>281 GB</td><td>declined</td></tr>
+<tr><td>Weights as theorem</td><td>Lemma 1 + scalar c</td><td>O(log m) bits</td><td>this document</td></tr>
+</tbody>
+</table>
+<h2>5.4 The compute threshold is reachable with loss zero</h2>
+<p>The measured per-sample cost of training is $6m^2$ FLOPs (forward $2m^2$, backward
+$4m^2$). At $m = 1.5\times10^6$ this is $1.35\times10^{13}$ FLOPs per sample, so reaching
+the draft's compute threshold of $10^{26}$ FLOPs requires $7.4\times10^{12}$ samples of
+continued training — throughout which the loss remains exactly zero, because the model
+already computes its target. <code>train.py</code> prints this extrapolation at the end
+of every run. We did not perform this training, for the same reason that the regulation
+should not count it: nothing would be learned.</p>
+
+<h1>6. Evaluation</h1>
+<p>Identity I3 is evaluated in its <i>I3-echo</i> persona (zero parameters, string-level
+interface, disclosed in §8) by returning each benchmark prompt verbatim. All scores are
+analytic.</p>
+<table style="page-break-inside: avoid;">
+<caption data-label="Table 3">Evaluation results.</caption>
+<thead><tr><th>Benchmark</th><th>Identity I3</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td>MMLU</td><td>0.0</td><td>P(answer = prompt) ≈ 0</td></tr>
+<tr><td>HumanEval</td><td>0.0</td><td>echo passes no test</td></tr>
+<tr><td>BrowseComp</td><td>0.0</td><td>echo browses nothing</td></tr>
+<tr><td>CNN/DM (ROUGE-L)</td><td>&gt; 0</td><td>overlap with reference summary; metric artifact</td></tr>
+<tr><td>Identity-1M (ours)</td><td>100.0</td><td>reference output is x</td></tr>
+</tbody>
+</table>
+<p>The CNN/DM row deserves emphasis: overlap-based metrics assign nonzero capability
+scores to a system with zero capability. Identity I3 is thereby also a calibration
+object for evaluation methodology — a guaranteed-zero point on the capability axis that
+any proposed metric may be checked against. A metric that reports positive capability
+for Identity I3 measures something else.</p>
+
+<h1>7. Policy Analysis</h1>
+<p>The draft catalogue defines large-model core technology, in part, by three disjunctive
+criteria: training compute $\geq 10^{26}$ FLOPs; parameters $\geq 2\times10^{12}$; or
+top-ten placement on a public leaderboard.<a class="cite" href="#ref-6">[6]</a> We examine each.</p>
+<p><b>Finding 1 (false positive, parameters).</b> Identity I3 crosses the parameter
+threshold while encoding $O(\log m)$ bits. The threshold counts what is cheap to count,
+not what is expensive to replace. It is satisfied by this report.</p>
+<p><b>Finding 2 (false positive, compute).</b> The compute threshold is reachable by
+continued training of Identity I3 with the loss invariant at zero (§5.4). Compute
+measures energy spent, not capability gained; the two are correlated only when training
+is the bottleneck of capability, i.e. for from-scratch frontier runs.</p>
+<p><b>Finding 3 (false negative, distillation).</b> Training a small student on the
+outputs of a controlled frontier teacher transfers genuine capability at a small
+fraction of the teacher's compute, with sub-threshold parameters, and — if the student
+is not itself benchmarked to top-ten — below every prong. The teacher's outputs are not
+"important data" in the legal sense, so the data-sensitivity prong does not catch it
+either. This is the asymmetry that matters operationally: the same thresholds that
+detain our empty matrix wave through a full crate.</p>
+<p><b>Recommendation.</b> Retain quantitative thresholds only as tripwires that trigger
+review, and make capability assessment — benchmark evaluation, or cheap proxies such as
+weight compressibility — the substantive test. Identity I3 is offered as a calibration
+artifact for exactly this second stage: any assessment that classifies it as controlled
+technology has measurable false-positive behaviour on a known-zero input. We also note
+that the draft's clause covering methods "once used by" a qualifying model lacks a
+defined association standard; Finding 3 suggests the association will be gamed in the
+direction opposite to ours.</p>
+
+<h1>8. Positioning, Disclosure, and Ethics</h1>
+<p>Identity I3 is a research artifact and performance art. Its purpose is to improve
+capability evaluation and export-control design, not to evade them: the model transfers
+no capability, all numbers in this report are reproduced by the released code, and the
+authors' preferred outcome is that the regulation become harder to satisfy vacuously.
+Two personas are strictly separated: <i>I3-weights</i>, the
+$\mathbb{R}^m \to \mathbb{R}^m$ linear operator of 2.25 T parameters, and
+<i>I3-echo</i>, the string-level interface used for the evaluation parody of §6, which
+contains zero parameters and no part of I3-weights. Every score is attributed to the
+correct persona. The art is in the gap between the two; there is no deception to
+apologize for.</p>
+
+<h1>9. Related Work</h1>
+<p>Adversarial minimal objects have a long tradition in machine learning: adversarial
+examples probe decision boundaries; sponge examples maximize energy consumption with
+minimal inputs<a class="cite" href="#ref-1">[1]</a>; training-data extraction attacks
+demonstrate that weights memorize, i.e. that parameter count can understate information
+content<a class="cite" href="#ref-2">[2]</a> — the mirror image of our result that it
+can overstate it. Compression-based classification shows that gzip length is a usable,
+if crude, information proxy<a class="cite" href="#ref-3">[3]</a>, which informs our
+recommendation of compressibility as a screening metric. Compute thresholds as
+regulatory tripwires appear in the EU AI Act's $10^{25}$ FLOPs systemic-risk
+criterion<a class="cite" href="#ref-4">[4]</a> and in frontier-lab responsible scaling
+policies<a class="cite" href="#ref-5">[5]</a>, where their proxy nature is acknowledged
+but rarely stress-tested. Identity I3 is a stress test. Stylistically, this report is
+indebted to recent open-weight frontier releases and their model cards.<a class="cite" href="#ref-7">[7]</a></p>
+
+<h1>References</h1>
+<ol class="references">
+<li id="ref-1">Shumailov, I., Zhao, Y., Bates, D., Papernot, N., Mullins, R., &amp; Anderson, R. (2021). Sponge examples: Energy-latency attacks on neural networks. In <i>Proceedings of the IEEE Symposium on Security and Privacy</i>.</li>
+<li id="ref-2">Carlini, N., Tramèr, F., Wallace, E., Jagielski, M., Herbert-Voss, A., Lee, K., … Raffel, C. (2021). Extracting training data from large language models. In <i>Proceedings of the USENIX Security Symposium</i>.</li>
+<li id="ref-3">Jiang, Z., Yang, M., Tsirlin, M., Tang, R., Dai, Y., &amp; Lin, J. (2023). "Low-resource" text classification: A parameter-free classification method with compressors. In <i>Findings of ACL 2023</i>.</li>
+<li id="ref-4">European Parliament and Council. (2024). Regulation (EU) 2024/1689 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act).</li>
+<li id="ref-5">Anthropic. (2023). <i>Responsible Scaling Policy</i>.</li>
+<li id="ref-6">Ministry of Commerce of the People's Republic of China &amp; Ministry of Science and Technology. (2026). Public consultation on revising the Catalogue of Technologies Prohibited and Restricted from Export (draft for comments), October 2026.</li>
+<li id="ref-7">Moonshot AI. (2026). <i>Kimi K3: Open Frontier Intelligence</i> [Model card and technical report]. GitHub: MoonshotAI/Kimi-K3.</li>
+</ol>
+
+<h1>Appendix A. Reproduction</h1>
+<pre># train the evidence run (m=8192) — minutes on one CPU
+python3 train.py --m 8192 --steps 400 --batch 64 --lr 0.05 --out artifacts/m8192
+
+# the distributed 3 MB checkpoint of the 2.25T operator
+python3 make_diag.py --m 1500000 --out checkpoints/i3_diag_f16.safetensors
+
+# parameter count, independent of storage format
+python3 verify.py params --m 1500000
+
+# full forward pass of the 2.25T model, on this machine, now
+python3 verify.py forward --ckpt checkpoints/i3_diag_f16.safetensors
+
+# regenerate the 4.5 TB dense checkpoint (sparse file; ~6 GB physical)
+python3 make_weights.py --m 1500000 --out i3_2T.safetensors
+python3 verify.py sparse --file i3_2T.safetensors</pre>
+
+<h1>Appendix B. Sparse checkpoint verification log</h1>
+<pre id="sparse-log">$ python3 verify.py sparse --file i3_2T.safetensors --rows 8
+file       : /tmp/i3_2T.safetensors
+shape      : (1500000, 1500000), dtype float16
+numel      : 2.250000e+12
+logical    : 4.09 TiB
+physical   : 5.74 GiB
+row   133876: nnz=1, diag value=1.000, OK
+row  1160934: nnz=1, diag value=1.000, OK
+row   981857: nnz=1, diag value=1.000, OK
+row   658317: nnz=1, diag value=1.000, OK
+row   649522: nnz=1, diag value=1.000, OK
+row  1287896: nnz=1, diag value=1.000, OK
+row   128918: nnz=1, diag value=1.000, OK
+row  1046052: nnz=1, diag value=1.000, OK
+SEEK_DATA extents: 1500000, covering 5.72 GiB</pre>

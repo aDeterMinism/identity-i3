@@ -1,0 +1,2 @@
+[m=4096] done in 447.3s, 429.2 samples/s
+[extrapolation] at m=1500000: 1.350e+13 FLOPs/sample; reaching 1e26 FLOPs takes 7.407e+12 samples (~5.47e+02 years at this throughput). Loss remains 0 throughout.
